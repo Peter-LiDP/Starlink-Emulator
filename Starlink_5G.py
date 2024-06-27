@@ -18,7 +18,7 @@ current_line_number = 0
 current_line_number_5g = 0
 
 def auto_test():
-    for _ in range(110):
+    for _ in range(100):
         h1.sendCmd('xterm -title "node: h1 server" -hold -e "./picoquicdemo -M 1 -p 4434 -G bbr1 -q ./server_qlog -w ./sample/" &')
         h2.sendCmd('xterm -title "node: h2 client" -hold -e "./picoquicdemo -n test -M 1 -A 10.0.5.3/3 -G bbr1 -q ./client_qlog -o /usr 10.0.1.2 4434 /testfile" &')
         time.sleep(95)
