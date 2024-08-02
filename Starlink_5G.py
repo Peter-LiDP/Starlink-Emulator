@@ -123,12 +123,12 @@ def configureNetworkConditions(net, host_name, dev, step, column):
         if current_line_number_5g >= len(latency_lines):
             current_line_number_5g = 0
 
-def link_interruption(node: mininet.node.Host, link: str, loss_rate: int):
+def link_interruption(node: mininet.node.Host, link: str):
     for intf in node.intfList():
         if intf.link and str(intf) == link:
             intfs = [intf.link.intf1, intf.link.intf2]
-            intfs[0].config(loss = loss_rate)
-            intfs[1].config(loss = loss_rate)
+            intfs[0].config()
+            intfs[1].config()
 
 
 def handover_event(node: mininet.node.Host):
@@ -147,8 +147,7 @@ def handover_event(node: mininet.node.Host):
         network_thread2 = NetworkConfigThread_Starlink(net, 'r2', 'r2-eth1', 0.1, 3)
         network_thread4 = NetworkConfigThread_Starlink(net, 'r4', 'r4-eth0', 0.1, 2)
         print("Handover")
-        loss_rate = random.choice([2, 3])
-        # link_interruption(node, iface1, loss_rate)
+        # link_interruption(node, iface1)
         network_thread2.start()
         network_thread4.start()
 
@@ -166,17 +165,13 @@ if '__main__' == __name__:
     r4 = net.addHost('r4')
     r5 = net.addHost('r5')
 
-    linkopt_server = {'bw': 1000}
-    linkopt_starlink = {'loss': 2}
-    linkopt_broadband = {'loss': 1}
-
-    net.addLink(r1, h1, cls=TCLink, **linkopt_server)
-    net.addLink(r1, r4, cls=TCLink, **linkopt_server)
-    net.addLink(r1, r5, cls=TCLink, **linkopt_server)
-    net.addLink(r4, r2, cls=TCLink, **linkopt_server)
-    net.addLink(r5, r3, cls=TCLink, **linkopt_server)
-    net.addLink(r2, h2, cls=TCLink, **linkopt_starlink)
-    net.addLink(r3, h2, cls=TCLink, **linkopt_broadband)
+    net.addLink(r1, h1, cls=TCLink)
+    net.addLink(r1, r4, cls=TCLink)
+    net.addLink(r1, r5, cls=TCLink)
+    net.addLink(r4, r2, cls=TCLink)
+    net.addLink(r5, r3, cls=TCLink)
+    net.addLink(r2, h2, cls=TCLink)
+    net.addLink(r3, h2, cls=TCLink)
     net.build()
 
     r1.cmd("ifconfig r1-eth0 0")
@@ -267,7 +262,6 @@ if '__main__' == __name__:
     h2.cmd('xterm -title "node: h2 monitoring" -hold -e "sudo bwm-ng" &')
     
     test_process = Process(target=auto_test)
-
     test_process.start()
     
     network_thread1 = NetworkConfigThread(net, 'r3', 'r3-eth1', 0.1, 2)
