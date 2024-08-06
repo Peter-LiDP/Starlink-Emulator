@@ -55,7 +55,7 @@ class NetworkConfigThread_Starlink(threading.Thread):
 def configureNetworkConditions_starlink(net, host_name, dev, step, column):
     global current_line_number
 
-    with open('/home/mininet/data/lagos.csv', 'r') as file:
+    with open('./lagos.csv', 'r') as file:
         reader = csv.reader(file)
         latency_lines = list(reader)
 
@@ -88,7 +88,7 @@ def configureNetworkConditions_starlink(net, host_name, dev, step, column):
     
 def configureNetworkConditions(net, host_name, dev, step, column):
     global current_line_number_5g
-    with open('/home/mininet/data/5G.csv', 'r') as file:
+    with open('./5G.csv', 'r') as file:
         reader = csv.reader(file)
         latency_lines = list(reader)
     
