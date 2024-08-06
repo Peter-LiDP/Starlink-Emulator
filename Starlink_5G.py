@@ -48,18 +48,14 @@ class NetworkConfigThread_Starlink(threading.Thread):
         self.dev = dev
         self.step = step
         self.column = column
-        self.stop_event = threading.Event()
 
     def run(self):
-        configureNetworkConditions_starlink(self.net, self.host_name, self.dev, self.step, self.column, self.stop_event)
-
-    def stop(self):
-        self.stop_event.set()
+        configureNetworkConditions_starlink(self.net, self.host_name, self.dev, self.step, self.column)
     
-def configureNetworkConditions_starlink(net, host_name, dev, step, column, stop_event):
+def configureNetworkConditions_starlink(net, host_name, dev, step, column):
     global current_line_number
 
-    with open('./lagos.csv', 'r') as file:
+    with open('/home/mininet/data/lagos.csv', 'r') as file:
         reader = csv.reader(file)
         latency_lines = list(reader)
 
@@ -70,16 +66,13 @@ def configureNetworkConditions_starlink(net, host_name, dev, step, column, stop_
     result_bw = host.cmd(cmd_bw)
     
     initialDelay = float(latency_lines[current_line_number][column])
-    cmd_jitter = 'tc qdisc add dev {} parent 1:1 handle 10: netem delay {}ms'.format(dev, initialDelay)
+    cmd_jitter = 'tc qdisc add dev {} parent 1:1 handle 10: netem delay {}ms loss 2%'.format(dev, initialDelay)
     result_jitter = host.cmd(cmd_jitter)
     
     while True:
-        if stop_event.is_set():
-            break
-
         currentDelay = float(latency_lines[current_line_number][column])
 
-        update_cmd = 'tc qdisc change dev {} parent 1:1 handle 10: netem delay {}ms'.format(dev, currentDelay)
+        update_cmd = 'tc qdisc change dev {} parent 1:1 handle 10: netem delay {}ms loss 2%'.format(dev, currentDelay)
         result = host.cmd(update_cmd)
         
         currentBW = float(latency_lines[current_line_number][column - 2])
@@ -95,7 +88,7 @@ def configureNetworkConditions_starlink(net, host_name, dev, step, column, stop_
     
 def configureNetworkConditions(net, host_name, dev, step, column):
     global current_line_number_5g
-    with open('./5G.csv', 'r') as file:
+    with open('/home/mininet/data/5G.csv', 'r') as file:
         reader = csv.reader(file)
         latency_lines = list(reader)
     
@@ -105,12 +98,12 @@ def configureNetworkConditions(net, host_name, dev, step, column):
     result_bw = host.cmd(cmd_bw)
     
     initialDelay = float(latency_lines[current_line_number_5g][column])
-    cmd_jitter = 'tc qdisc add dev {} parent 1:1 handle 10: netem delay {}ms'.format(dev, initialDelay)
+    cmd_jitter = 'tc qdisc add dev {} parent 1:1 handle 10: netem delay {}ms loss 1%'.format(dev, initialDelay)
     result_jitter = host.cmd(cmd_jitter)
     
     while True:
         currentDelay = float(latency_lines[current_line_number_5g][column])
-        update_cmd = 'tc qdisc change dev {} parent 1:1 handle 10: netem delay {}ms'.format(dev, currentDelay)
+        update_cmd = 'tc qdisc change dev {} parent 1:1 handle 10: netem delay {}ms loss 1%'.format(dev, currentDelay)
         result = host.cmd(update_cmd)
         currentBW = float(latency_lines[current_line_number_5g][column - 2])
         update_cmd_bw = 'tc qdisc change dev {} root handle 1: tbf rate {}mbit burst 15k latency 50ms'.format(dev, currentBW)
@@ -122,36 +115,6 @@ def configureNetworkConditions(net, host_name, dev, step, column):
         
         if current_line_number_5g >= len(latency_lines):
             current_line_number_5g = 0
-
-def link_interruption(node: mininet.node.Host, link: str):
-    for intf in node.intfList():
-        if intf.link and str(intf) == link:
-            intfs = [intf.link.intf1, intf.link.intf2]
-            intfs[0].config()
-            intfs[1].config()
-
-
-def handover_event(node: mininet.node.Host):
-    network_thread2 = NetworkConfigThread_Starlink(net, 'r2', 'r2-eth1', 0.1, 3)
-    network_thread2.start()
-    network_thread4 = NetworkConfigThread_Starlink(net, 'r4', 'r4-eth0', 0.1, 2)
-    network_thread4.start()
-
-    while True:
-        stop_event = threading.Event()
-        network_thread2.stop()
-        network_thread4.stop()
-        network_thread2.join()
-        network_thread4.join()
-
-        network_thread2 = NetworkConfigThread_Starlink(net, 'r2', 'r2-eth1', 0.1, 3)
-        network_thread4 = NetworkConfigThread_Starlink(net, 'r4', 'r4-eth0', 0.1, 2)
-        print("Handover")
-        # link_interruption(node, iface1)
-        network_thread2.start()
-        network_thread4.start()
-
-        time.sleep(15)
 
 if '__main__' == __name__:
     setLogLevel('info')
@@ -261,20 +224,25 @@ if '__main__' == __name__:
     
     h2.cmd('xterm -title "node: h2 monitoring" -hold -e "sudo bwm-ng" &')
     
-    test_process = Process(target=auto_test)
-    test_process.start()
     
     network_thread1 = NetworkConfigThread(net, 'r3', 'r3-eth1', 0.1, 2)
     network_thread3 = NetworkConfigThread(net, 'r5', 'r5-eth0', 0.1, 3)
+    
+    network_thread2 = NetworkConfigThread_Starlink(net, 'r2', 'r2-eth1', 0.1, 3)
+    network_thread4 = NetworkConfigThread_Starlink(net, 'r4', 'r4-eth0', 0.1, 2)
 
-    change_latency_process = Process(target=handover_event, args=(r2,))
-
-    change_latency_process.start()
     network_thread1.start() 
     network_thread3.start()
+    network_thread2.start()
+    network_thread4.start()
+    
+    test_process = Process(target=auto_test)
+    test_process.start()
+    
     network_thread1.join()
     network_thread3.join()
+    network_thread2.join()
+    network_thread4.join()
 
-    change_latency_process.join()
     CLI(net)
     net.stop()
