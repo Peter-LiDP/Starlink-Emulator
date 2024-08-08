@@ -25,9 +25,9 @@ file_counter = Value('i', 0)
 
 def auto_test():
     for i in range(50):
-        h1.cmd('xterm -title "node: h1 server" -hold -e "irtt server" &')
-        h2.cmd('xterm -title "node: h2 client" -hold -e "irtt client -i 10ms -d 100s 10.0.1.2" &')
-        time.sleep(195)
+        h1.sendCmd('xterm -title "node: h1 server" -hold -e "./picoquicdemo -M 1 -p 4434 -G bbr1 -q ./server_qlog -w ./sample/" &')
+        h2.sendCmd('xterm -title "node: h2 client" -hold -e "./picoquicdemo -n test -M 1 -A 10.0.5.3/3 -G bbr1 -q ./client_qlog -o /usr 10.0.1.2 4434 /testfile_1" &')
+        time.sleep(145)
         h1.sendInt()
         h2.sendInt()
         h1.waitOutput()
