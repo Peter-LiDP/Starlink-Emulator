@@ -1,10 +1,10 @@
 # Starlink-5G-testbed
 
 For 5G + ISL test:
-replace the 62nd line with ./lagos.csv
+use ./lagos.csv
 
 For 5G + Bent-pipe test:
-replace the 62nd line with ./victoria.csv
+replace ./lagos.csv with ./victoria.csv
 
 Starlink data source: 
 Pan, J., Zhao, J. and Cai, L., 2024. Measuring the Satellite Links of a LEO Network. In IEEE International Conference on Communications.
