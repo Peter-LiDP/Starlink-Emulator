@@ -23,19 +23,23 @@ line_lock = Lock()
 update_event = threading.Event()
 file_counter = Value('i', 0)
 
+def reset_line_numbers():
+    global line_number_5g, line_number_starlink
+    with line_lock:
+        line_number_5g.value = 1
+        line_number_starlink.value = 1
+
 def auto_test():
     for i in range(50):
+        reset_line_numbers()
         h1.sendCmd('xterm -title "node: h1 server" -hold -e "./picoquicdemo -M 1 -p 4434 -G bbr1 -q ./server_qlog -w ./sample/" &')
         h2.sendCmd('xterm -title "node: h2 client" -hold -e "./picoquicdemo -n test -M 1 -A 10.0.5.3/3 -G bbr1 -q ./client_qlog -o /usr 10.0.1.2 4434 /testfile_1" &')
-        time.sleep(145)
+        time.sleep(100)
         h1.sendInt()
         h2.sendInt()
         h1.waitOutput()
         h2.waitOutput()
         time.sleep(5)
-        if i == 49:
-            print(f"line_number_5g.value: {line_number_5g.value}")
-            print(f"line_number_starlink.value: {line_number_starlink.value}")
 
 class NetworkConfigThread(threading.Thread):
     def __init__(self, net, host_name, dev, column, barrier, line_number, line_lock, update_event):
@@ -168,7 +172,6 @@ def update_lines_periodically(scheduler, step, start_time):
     else:
         scheduler.enter(0, 1, update_lines_periodically, (scheduler, step, time.perf_counter()))
 
-
 if '__main__' == __name__:
     setLogLevel('info')
     net = Mininet(link=TCLink)
@@ -275,8 +278,6 @@ if '__main__' == __name__:
 
     h2.cmd("ip route add default scope global nexthop via 10.0.4.2 dev h2-eth0")
 
-    h2.cmd('xterm -title "node: h2 monitoring" -hold -e "sudo bwm-ng" &')
-
     network_thread1 = NetworkConfigThread(net, 'r3', 'r3-eth1', 2, barrier, line_number_5g, line_lock, update_event)
     network_thread3 = NetworkConfigThread(net, 'r5', 'r5-eth0', 3, barrier, line_number_5g, line_lock, update_event)
 
@@ -296,3 +297,4 @@ if '__main__' == __name__:
 
     CLI(net)
     net.stop()
+
