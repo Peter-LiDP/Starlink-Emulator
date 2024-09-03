@@ -34,7 +34,7 @@ def auto_test():
         reset_line_numbers()
         h1.sendCmd('xterm -title "node: h1 server" -hold -e "./picoquicdemo -M 1 -p 4434 -G bbr1 -q ./server_qlog -w ./sample/" &')
         h2.sendCmd('xterm -title "node: h2 client" -hold -e "./picoquicdemo -n test -M 1 -A 10.0.5.3/3 -G bbr1 -q ./client_qlog -o /usr 10.0.1.2 4434 /testfile_1" &')
-        time.sleep(100)
+        time.sleep(150)
         h1.sendInt()
         h2.sendInt()
         h1.waitOutput()
