@@ -26,14 +26,8 @@ start_time_option = None
 start_time_offset = 0
 
 def auto_test():
-    h1.sendCmd('xterm -title "node: h1 server" -hold -e "irtt server > /home/mininet/emulator_test/h1_server.log 2>&1" &')
-    h2.sendCmd('xterm -title "node: h2 client" -hold -e "irtt client -i 10ms -d 100s 10.0.1.2 > /home/mininet/emulator_test/h2_client.log 2>&1" &')
-    time.sleep(150)
-    h1.sendInt()
-    h2.sendInt()
-    h1.waitOutput()
-    h2.waitOutput()
-    time.sleep(5)
+    # your test code
+    pass
 
 class NetworkConfigThread(threading.Thread):
     def __init__(self, net, host_name, dev, column, barrier, timestamp, update_event, data_file):
@@ -48,6 +42,8 @@ class NetworkConfigThread(threading.Thread):
         self.data_file = data_file
         self.latency_lines = self.read_csv_data()
         self.timestamp_to_line = self.create_timestamp_index()
+        self.timestamps = sorted([int(line[-1]) for line in self.latency_lines])
+        self.total_duration = self.timestamps[-1] - self.timestamps[0] + 100
 
     def read_csv_data(self):
         with open(self.data_file, 'r') as file:
@@ -126,17 +122,18 @@ def configureNetworkConditions(thread_obj):
             print(f"[{data_file}] Deviation {deviation} ms exceeds tolerance at wall time {wall_time_in_minute} ms.")
             second_correction = (((wall_time_in_minute + start_time_offset) % (60 * 1000)) // 100) * 100
             timestamp.value = (virtual_timestamp // (60 * 1000)) * 60 * 1000 + second_correction
-            if timestamp.value < virtual_timestamp:
+            if timestamp.value < virtual_timestamp and abs(timestamp.value - virtual_timestamp) >= 30000:
                 timestamp.value = (virtual_timestamp // (60 * 1000) + 1) * 60 * 1000 + second_correction
             
             virtual_timestamp = timestamp.value
 
-        line_num = find_line_number(timestamp_to_line, virtual_timestamp)
+        effective_timestamp = ((virtual_timestamp - thread_obj.timestamps[0]) % thread_obj.total_duration) + thread_obj.timestamps[0]
+        line_num = find_line_number(thread_obj.timestamp_to_line, effective_timestamp)
         if line_num is None:
             print(f"[{data_file}] Virtual timestamp {virtual_timestamp} ms not found in data file.")
             continue
             
-        print(f"line_num: {line_num}, virtual_timestamp: {virtual_timestamp}")
+        print(f"line_num: {line_num}, virtual_timestamp: {virtual_timestamp}, effective_timestamp: {effective_timestamp}")
 
         currentBW = float(latency_lines[line_num][column - 2])
         update_cmd_bw = f'tc qdisc change dev {dev} root handle 1: tbf rate {currentBW}mbit burst 15k latency 50ms'
@@ -198,8 +195,8 @@ def update_lines_based_on_wall_time(update_event):
         current_time_ms = int(time.time() * 1000)
         if current_time_ms >= next_update_time:
             if last_update_time is None or current_time_ms - last_update_time >= 100:
-                timestamp_5g.value = (timestamp_5g.value + 100) % (100*len(open('./5G.csv').readlines()))
-                timestamp_starlink.value = (timestamp_starlink.value + 100) % (100*len(open('./lagos.csv').readlines()))
+                timestamp_5g.value += 100
+                timestamp_starlink.value += 100
                 update_event.set()
                 last_update_time = current_time_ms
                 next_update_time = ((current_time_ms // 100) + 1) * 100
@@ -358,4 +355,3 @@ if '__main__' == __name__:
         args=(update_event,)
     )
     update_thread.start()
-
