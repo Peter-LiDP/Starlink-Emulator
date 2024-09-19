@@ -93,12 +93,17 @@ def configureNetworkConditions(thread_obj):
             print(f"No matching timestamp found in {data_file}. Exiting thread.")
             return
 
+    if '5G' in data_file:
+        loss_rate = '1%'
+    else:
+        loss_rate = '2%'
+
     initialBW = float(latency_lines[line_num][column - 2])
     cmd_bw = f'tc qdisc replace dev {dev} root handle 1: tbf rate {initialBW}mbit burst 15k latency 50ms'
     host.cmd(cmd_bw)
 
     initialDelay = float(latency_lines[line_num][column])
-    cmd_jitter = f'tc qdisc add dev {dev} parent 1:1 handle 10: netem delay {initialDelay}ms loss 2%'
+    cmd_jitter = f'tc qdisc add dev {dev} parent 1:1 handle 10: netem delay {initialDelay}ms loss {loss_rate}'
     host.cmd(cmd_jitter)
     
     barrier.wait()
@@ -140,7 +145,7 @@ def configureNetworkConditions(thread_obj):
         host.cmd(update_cmd_bw)
 
         currentDelay = float(latency_lines[line_num][column])
-        update_cmd = f'tc qdisc change dev {dev} parent 1:1 handle 10: netem delay {currentDelay}ms loss 2%'
+        update_cmd = f'tc qdisc change dev {dev} parent 1:1 handle 10: netem delay {currentDelay}ms loss {loss_rate}'
         host.cmd(update_cmd)
 
         barrier.wait()
