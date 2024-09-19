@@ -33,14 +33,10 @@ The emulator includes two paths, with Starlink as the default path. You can also
 ### Wall Time Emulation
 To emulate a handover pattern at specific seconds of the minute (e.g., at 12, 27, 42, and 57 seconds), run:
 
-    ```bash
     sudo python emulator.py
-    ```
 
 ### Customized Start Time Emulation
 If you prefer to specify a start time for the emulation (in 100 milliseconds precision), use the `--start_time` flag. For example, to start the emulation at 23.1 seconds:
 
-    ```bash
     sudo python emulator.py --start_time=23100
-    ```
 
