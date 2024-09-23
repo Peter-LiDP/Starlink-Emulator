@@ -233,9 +233,12 @@ if '__main__' == __name__:
 
     if args.start_time is not None:
         start_time_option = args.start_time
-        if start_time_option not in timestamp_index_5g or start_time_option not in timestamp_index_starlink:
-            print(f"Error: The specified start timestamp {start_time_option} does not exist in both data files.")
+        if start_time_option % 100 != 0:
+            print(f"Error: The start timestamp {start_time_option} must be a multiple of 100 ms.")
             exit(1)
+        timestamp_5g.value += start_time_option
+        timestamp_starlink.value += start_time_option
+        
     else:
         start_time_option = None
 
