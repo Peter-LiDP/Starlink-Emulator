@@ -137,8 +137,6 @@ def configureNetworkConditions(thread_obj):
         if line_num is None:
             print(f"[{data_file}] Virtual timestamp {virtual_timestamp} ms not found in data file.")
             continue
-            
-        print(f"line_num: {line_num}, virtual_timestamp: {virtual_timestamp}, effective_timestamp: {effective_timestamp}")
 
         currentBW = float(latency_lines[line_num][column - 2])
         update_cmd_bw = f'tc qdisc change dev {dev} root handle 1: tbf rate {currentBW}mbit burst 15k latency 50ms'
